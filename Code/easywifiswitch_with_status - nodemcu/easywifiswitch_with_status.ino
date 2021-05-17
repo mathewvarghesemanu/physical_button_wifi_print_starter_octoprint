@@ -16,35 +16,82 @@ https://github.com/mathewvarghesemanu/physical_button_wifi_print_starter_octopri
 // #include <ESP8266WiFiMulti.h>
 
 // #include <ESP8266HTTPClient.h>
-
-#include <ESP8266WiFi.h>
-#include <ESP8266WiFiMulti.h>
+#include <Arduino.h>
+// #include <ESP8266WiFi.h>
+// #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
-#include <WiFiClient.h>
 #include <ArduinoJson.h>
-// #include <String.h>
 // #include <HTTPClient.h>
-// #include <WiFiMulti.h>
+#include <WiFiMulti.h>
 
-const char* AP_SSID = "NETGEAR87"; //change ssid
-const char* AP_PWD = "quaintsocks941"; //change password
-const char* apiurl="http://10.0.0.30/api/job";
-const char* authkey="A21E15F2F9864673A500081DE8F66AA6";
-const int led_pin=2;
-const int button_pin=D1;
-const int buzzerpin=D2;
+const char *AP_SSID = "NETGEAR87"; //change ssid
+const char *AP_PWD = "quaintsocks941"; //change password
+String apiurl="http://10.0.0.30/api/job";
+String authkey="A21E15F2F9864673A500081DE8F66AA6";
+int led_pin=2;
+int button_pin=5;
+int buzzerpin=6;
+WiFiMulti wifiMulti;
+void postDataToServer();
+void getDataFromServer();
 
-ESP8266WiFiMulti WiFiMulti;
+void setup() {
+  pinMode(button_pin, INPUT_PULLUP); 
+  pinMode(led_pin, OUTPUT);
+  digitalWrite(led_pin, 0);
+  Serial.begin(115200);
+
+  delay(4000);
+  wifiMulti.addAP(AP_SSID, AP_PWD);
+  Serial.println("started...");
+  pinMode(buzzerpin,OUTPUT);
+  digitalWrite(buzzerpin,LOW);
+  // attachInterrupt(digitalPinToInterrupt(button_pin), button_press_function, FALLING);
+  digitalWrite(led_pin, 0);
+}
+
+void button_press_function(){
+  digitalWrite(led_pin, 1); //internal LED is lit up untill the server returns a value
+  postDataToServer();
+  digitalWrite(led_pin, 0);
+  tone(buzzerpin, 1000, 100);
+
+}
+
+void loop() {
+  getDataFromServer();
+  if (digitalRead(button_pin) != 1)//if switch is pressed, led lits up, command sent and delay for 1.5 minutes
+  {
+    digitalWrite(led_pin, 1); //internal LED is lit up untill the server returns a value
+    postDataToServer();
+    digitalWrite(led_pin, 0);
+    
+    
+  }
+  else
+  {
+    Serial.print("off\n");//if switch idle, led turned off. minimal delay and loop starts
+    
+  }
+delay(1000);
+}
+
 
 void getDataFromServer()
 
   {
   // wait for WiFi connection
   if ((wifiMulti.run() == WL_CONNECTED)) {
+
+    WiFiClient client;
+
     HTTPClient http;
+
     Serial.print("[HTTP] begin...\n");
-    // configure target server and url
-    bool http.begin (apiurl);
+    // configure traged server and url
+
+
+    http.begin(client, apiurl);
     http.addHeader("Content-Type", "application/json");
     http.addHeader("X-Api-Key", authkey);
     //    http.setAuthorization(authkey);
@@ -79,6 +126,7 @@ void getDataFromServer()
         {
           digitalWrite(led_pin , 0);
           Serial.print("Printing");
+          delay(5000);
         }
         
       }
@@ -94,15 +142,27 @@ void getDataFromServer()
 
 
 
-int postDataToServer() {
-int response_code;
-response_code=0;
+
+
+
+
+
+
+
+
+
+
+
+
+void postDataToServer() {
+
+
   // Block until we are able to connect to the WiFi access point
   if (wifiMulti.run() == WL_CONNECTED) {
     Serial.println("wifi connected...");
     HTTPClient http;
     Serial.println("Posting JSON data to server...");
-    bool begin(apiurl);
+    http.begin(apiurl);
     http.addHeader("Content-Type", "application/json");
     http.addHeader("X-Api-Key", authkey);
     StaticJsonDocument<200> doc;
@@ -114,7 +174,7 @@ response_code=0;
     serializeJson(doc, requestBody);
 
     int httpResponseCode = http.POST(requestBody); //send command to start print to octopi server
-    response_code=httpResponseCode;
+
     if (httpResponseCode > 0) {
       Serial.print(httpResponseCode);
       String response = http.getString();
@@ -122,37 +182,10 @@ response_code=0;
       Serial.println(httpResponseCode);
       Serial.println(response);
         http.end();
-        delay(9000);
-        
-      return (response_code);
+      delay(10000);
+      return httpResponseCode;
     }
+
   }
-}
 
-
-void setup() {
-  pinMode(button_pin, INPUT_PULLUP); 
-  pinMode(led_pin, OUTPUT);
-  digitalWrite(led_pin, LOW);
-  pinMode(buzzerpin,OUTPUT);
-  digitalWrite(buzzerpin,LOW);
-  Serial.begin(115200);
-  delay(4000);
-  wifiMulti.addAP(AP_SSID, AP_PWD);
-  Serial.println("Module started...");
-
-  attachInterrupt(digitalPinToInterrupt(button_pin), button_press_function, FALLING);
-}
-
-void button_press_function(){
-  digitalWrite(led_pin, 1); //internal LED is lit up untill the server returns a value
-  postDataToServer();
-  digitalWrite(led_pin, 0);
-  tone(buzzerpin, 1000, 100);
-
-}
-
-void loop() {
-  // getDataFromServer();
-  delay(10000);
 }

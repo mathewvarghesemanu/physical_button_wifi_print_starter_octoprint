@@ -17,6 +17,11 @@ https://github.com/mathewvarghesemanu/physical_button_wifi_print_starter_octopri
 #include <HTTPClient.h>
 #include <WiFiMulti.h>
 
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
+
+#include <ESP8266HTTPClient.h>
+
 const char *AP_SSID = "NETGEAR87"; //change ssid
 const char *AP_PWD = "quaintsocks941"; //change password
 int led_pin=2;
